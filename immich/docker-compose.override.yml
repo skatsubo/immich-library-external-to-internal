@@ -1,0 +1,52 @@
+services:
+
+  immich-server:
+    environment:
+      # optional "debug" or "verbose" logging
+      - IMMICH_LOG_LEVEL=verbose
+    volumes:
+      # internal library
+      - /tmp/extvol/library:/usr/src/app/upload/library
+      # external library
+      - /tmp/extvol/media:/tmp/extvol/media
+      # example layout on host with an image in external library and in internal library
+      #
+      # tree -L5 /tmp/extvol
+      #
+      # /tmp/extvol
+      # ├── library (internal)
+      # │   └── admin
+      # │       └── 2025
+      # │           └── 2025-03
+      # │               └── image.jpg
+      # └── media (external)
+      #     └── admin
+      #         └── 2025
+      #             └── 2025-03
+      #                 └── image.jpg
+      - some-fake-path
+
+  database:
+    # optional query log
+    command:
+      - "postgres"
+      - "-c"
+      - "config_file=/etc/postgresql/postgresql.conf"
+      # enable query log
+      - "-c"
+      - "log_statement=all"
+      # log to docker logs (container's stdout/stderr)
+      - "-c"
+      - "log_destination=stderr"
+      # disable file logging
+      # - "-c"
+      # - "logging_collector = off"
+      # log duration
+      # - "-c"
+      # - "log_duration = on"
+      # filter by duration
+      # - "-c"
+      # - "log_min_duration_statement = 0"
+    # less noise when query logging is enabled
+    healthcheck:
+      disable: true
