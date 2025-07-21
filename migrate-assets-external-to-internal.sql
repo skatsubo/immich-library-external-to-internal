@@ -11,6 +11,7 @@ DECLARE
   new_originalPath TEXT;
   new_deviceAssetId TEXT;
   new_deviceId TEXT;
+  new_libraryId UUID := NULL;
   new_isExternal BOOLEAN := false;
   cp_cmd TEXT;
   mv_cmd TEXT;
@@ -26,6 +27,8 @@ BEGIN
     new_deviceAssetId TEXT,
     old_deviceId TEXT NOT NULL,
     new_deviceId TEXT,
+    old_libraryId UUID,
+    new_libraryId UUID DEFAULT NULL,
     old_isExternal BOOLEAN NOT NULL,
     new_isExternal BOOLEAN,
     is_skipped BOOLEAN NOT NULL DEFAULT false,
@@ -73,6 +76,7 @@ BEGIN
       new_originalPath := 'upload/library/' || rec."storageLabel" || relative_path;
       new_deviceAssetId := 'web-' || rec."deviceAssetId" || '-' || current_time_ms::text;
       new_deviceId := 'Ext2int';
+      new_libraryId := NULL;
       new_isExternal := false;
 
       -- Perform the update if dry_run = false
@@ -82,6 +86,7 @@ BEGIN
           "originalPath" = new_originalPath,
           "deviceAssetId" = new_deviceAssetId,
           "deviceId" = new_deviceId,
+          "libraryId" = NULL,
           "isExternal" = new_isExternal
         WHERE id = rec.asset_id;
       END IF;
@@ -90,17 +95,17 @@ BEGIN
       cp_cmd := 'cp "' || rec."originalPath" || '" "' || new_originalPath || '"';
       mv_cmd := 'mv "' || rec."originalPath" || '" "' || new_originalPath || '"';
       INSERT INTO migrate_assets_external_to_internal_history (
-        asset_id, old_originalPath, new_originalPath, old_deviceAssetId, new_deviceAssetId, old_deviceId, new_deviceId, old_isExternal, new_isExternal, is_skipped, skip_reason, cp_command, mv_command
+        asset_id, old_originalPath, new_originalPath, old_deviceAssetId, new_deviceAssetId, old_deviceId, new_deviceId, old_libraryId, new_libraryId, old_isExternal, new_isExternal, is_skipped, skip_reason, cp_command, mv_command
       ) VALUES (
-        rec.asset_id, rec."originalPath", new_originalPath, rec."deviceAssetId", new_deviceAssetId, rec."deviceId", new_deviceId, rec."isExternal", new_isExternal, false, NULL, cp_cmd, mv_cmd
+        rec.asset_id, rec."originalPath", new_originalPath, rec."deviceAssetId", new_deviceAssetId, rec."deviceId", new_deviceId, rec."libraryId", new_libraryId, rec."isExternal", new_isExternal, false, NULL, cp_cmd, mv_cmd
       );
 
     ELSE
       -- History: skipped asset
       INSERT INTO migrate_assets_external_to_internal_history (
-        asset_id, old_originalPath, new_originalPath, old_deviceAssetId, new_deviceAssetId, old_deviceId, new_deviceId, old_isExternal, new_isExternal, is_skipped, skip_reason, cp_command, mv_command
+        asset_id, old_originalPath, new_originalPath, old_deviceAssetId, new_deviceAssetId, old_deviceId, new_deviceId, old_libraryId, new_libraryId, old_isExternal, new_isExternal, is_skipped, skip_reason, cp_command, mv_command
       ) VALUES (
-        rec.asset_id, rec."originalPath", NULL, rec."deviceAssetId", NULL, rec."deviceId", NULL, rec."isExternal", NULL, true, 'No matching import path prefix found', NULL, NULL
+        rec.asset_id, rec."originalPath", NULL, rec."deviceAssetId", NULL, rec."deviceId", NULL, rec."libraryId", NULL, rec."isExternal", NULL, true, 'No matching import path prefix found', NULL, NULL
       );
  
     END IF;
